@@ -150,7 +150,16 @@
     paint();
     host._cy = cy; // handy from the devtools console
     const fit = (animate) => (animate ? cy.animate({ fit: { padding: 24 }, duration: 250 }) : cy.fit(undefined, 24));
-    fit(false);
+    // Big graphs are unreadable when fit whole: open them at a readable zoom on the top of the tree,
+    // where the highest-ranked predicates are. "Fit" still shows everything.
+    const MIN_OPEN_ZOOM = 0.6;
+    function openView() {
+      cy.fit(undefined, 24);
+      if (cy.zoom() >= MIN_OPEN_ZOOM) return;
+      const bb = cy.elements().boundingBox();
+      cy.viewport({ zoom: MIN_OPEN_ZOOM, pan: { x: cy.width() / 2 - ((bb.x1 + bb.x2) / 2) * MIN_OPEN_ZOOM, y: 24 - bb.y1 * MIN_OPEN_ZOOM } });
+    }
+    openView();
     setHint();
 
     // ---- interaction ------------------------------------------------------
@@ -227,7 +236,11 @@
       hint.textContent = msg || (touch
         ? (active ? "Pinch to zoom · drag to pan · tap a node for details" : "")
         : (active ? "Scroll to zoom · drag to pan · hover a node to trace its paths · click for details"
-          : "Click the graph to enable scroll-zoom · drag to pan · hover a node to trace its paths"));
+          : `Click the graph to enable scroll-zoom · drag to pan${cy.zoom() > fitZoom() * 1.05 ? " · Fit shows the whole graph" : ""} · hover a node to trace its paths`));
+    }
+    function fitZoom() {
+      const bb = cy.elements().boundingBox();
+      return Math.min((cy.width() - 48) / Math.max(bb.w, 1), (cy.height() - 48) / Math.max(bb.h, 1));
     }
     let hintTimer = 0;
     cyEl.addEventListener("wheel", (e) => {
@@ -261,10 +274,11 @@
     host.querySelectorAll("[data-layout]").forEach((b) => (b.onclick = () => {
       host.querySelectorAll("[data-layout]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
       cy.layout({ ...layouts[b.dataset.layout](cy), fit: false }).run();
-      if (pinned) focus(pinned); else fit(true);
+      if (pinned) focus(pinned); else openView();
+      setHint();
     }));
     host.querySelectorAll("[data-zoom]").forEach((b) => (b.onclick = () => {
-      if (b.dataset.zoom === "fit") return fit(true);
+      if (b.dataset.zoom === "fit") { fit(true); setTimeout(() => setHint(), 300); return; }
       const level = cy.zoom() * (b.dataset.zoom === "in" ? 1.35 : 1 / 1.35);
       cy.animate({ zoom: { level: Math.min(cy.maxZoom(), Math.max(cy.minZoom(), level)), renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } }, duration: 150 });
     }));
@@ -273,7 +287,7 @@
     const themeObserver = new MutationObserver(() => { cy.style(style()); paint(); if (pinned) details(pinned); });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     let resizeTimer = 0;
-    const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { cy.resize(); if (!pinned) fit(false); }, 150); };
+    const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { cy.resize(); if (!pinned) openView(); }, 150); };
     addEventListener("resize", onResize);
 
     host._smxDestroy = () => {
