@@ -185,6 +185,7 @@ h3 { font-size: 1.1rem; margin: 0 0 .5rem; }
 .fig { margin: 0; overflow: hidden; }
 /* the figures are Plotly exports on white; keep them on white in both themes */
 .fig .plot { display: block; background: #fff; overflow-x: auto; border-bottom: 2px solid var(--line); }
+.fig .plot iframe { display: block; width: 100%; height: 480px; border: 0; }
 .fig figcaption { padding: 14px 18px; color: var(--muted); font-size: .95rem; }
 .fig figcaption strong { color: var(--ink); }
 
@@ -295,8 +296,8 @@ h3 { font-size: 1.1rem; margin: 0 0 .5rem; }
 .metric-navy { border-top-color: var(--navy); }
 .metric-teal { border-top-color: var(--teal); }
 .metric-rose { border-top-color: var(--rose); }
-.gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
-.gallery figcaption { font-size: .9rem; }
+.gallery { display: grid; gap: 18px; margin-bottom: 18px; }
+.gallery .plot iframe { height: 440px; }
 
 /* get started */
 .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
@@ -353,9 +354,10 @@ pre .m { color: var(--muted); font-style: italic; }
   .hide-sm { display: none; }
   .nav-links { gap: 14px; }
   .hero { padding-top: 36px; }
-  .steps, .grid, .doc-links, .gallery { grid-template-columns: 1fr; }
+  .steps, .grid, .doc-links { grid-template-columns: 1fr; }
   .install code { font-size: .95rem; }
-  .fig .plot img { width: 820px; max-width: none; }
+  /* plots keep a readable width on phones; the frame scrolls sideways */
+  .fig .plot iframe { width: 760px; height: 420px; }
   .g-cy { height: 340px; }
   .g-side { position: static; width: auto; max-height: none; border-width: 2px 0 0; border-radius: 0; box-shadow: none; }
   .section { padding-top: 44px; }

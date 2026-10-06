@@ -69,12 +69,12 @@
 
     <section class="wrap figure-section" aria-label="Example explanation">
       <figure class="card fig">
-        <a class="plot" href="assets/zone-ranking-over-spectrum.png" title="Open full size">
-          <img src="assets/zone-ranking-over-spectrum.png" alt="Mean spectra of two classes with seven spectral zones shaded by their LRC score; Feature 2 ranks first, Feature 1 second and Feature 3 third, while the background zones score close to zero" width="1200" height="480">
-        </a>
-        <figcaption>An SMX explanation of a classifier trained on synthetic two-class spectra. Each band is a spectral
-          zone, shaded and ranked by its <strong>Local Reaching Centrality</strong> in the predicate graph: the model
-          relies on the peaks in Feature 2 and Feature 1, and almost not at all on the background between them.</figcaption>
+        <div class="plot"><iframe src="assets/figures/zone-ranking.html" title="Interactive zone ranking over the mean spectra of class A and class B: F1 ranks first and F5 second, the four shared-peak zones score close to zero" loading="lazy"></iframe></div>
+        <figcaption>SMX's explanation of the <a href="#install">quickstart below</a>: an SVM trained on synthetic
+          two-class spectra. Each band is a spectral zone, shaded and ranked by its <strong>Local Reaching
+          Centrality</strong> in the predicate graph: the model relies on F1 and F5, the two zones where one class has a
+          peak the other lacks, and hardly at all on the four peaks the classes share. Hover for values, drag to zoom,
+          double-click to reset · <a href="assets/figures/zone-ranking.html">open on its own</a>.</figcaption>
       </figure>
     </section>
 
@@ -149,21 +149,22 @@
       </div>
       <div class="gallery">
         <figure class="card fig">
-          <a class="plot" href="assets/threshold-spectrum.png" title="Open full size">
-            <img src="assets/threshold-spectrum.png" alt="Spectra of class A and class B within one zone, with the dashed threshold spectrum of the predicate Feature 2 > 0.893 running between the two groups" width="1200" height="480" loading="lazy">
-          </a>
-          <figcaption><strong>Threshold spectrum</strong> of the predicate <code>Feature 2 &gt; 0.893</code>: the
-            dashed boundary sits between the two classes in measurement units.</figcaption>
+          <div class="plot"><iframe src="assets/figures/threshold-spectrum.html" title="Interactive threshold spectrum of the predicate F1 > 1.78 over the class A and class B spectra in zone F1" loading="lazy"></iframe></div>
+          <figcaption><strong>Threshold spectrum</strong> of the top predicate, <code>F1 &gt; 1.78</code>: its PC1
+            threshold drawn back as a spectrum in intensity units, over the calibration spectra of zone F1. Only class B
+            has a peak there, and the boundary runs through it, well above every class A spectrum ·
+            <a href="assets/figures/threshold-spectrum.html">open on its own</a>.</figcaption>
         </figure>
         <figure class="card fig">
-          <a class="plot" href="assets/faithfulness-curve.png" title="Open full size">
-            <img src="assets/faithfulness-curve.png" alt="Faithfulness curve: the prediction shift jumps after masking Feature 2 and Feature 1 and stays flat for the remaining zones; faithfulness level Very High" width="1200" height="480" loading="lazy">
-          </a>
-          <figcaption><strong>Faithfulness curve</strong>: masking the two top-ranked zones already moves the
-            predictions as much as masking all of them.</figcaption>
+          <div class="plot"><iframe src="assets/figures/faithfulness.html" title="Interactive faithfulness curve: masking F1 then F5 moves the predictions, masking the other four zones adds almost nothing" loading="lazy"></iframe></div>
+          <figcaption><strong>Faithfulness curve</strong>: masking the test spectra zone by zone, best-ranked first.
+            Masking F1 alone barely moves the predictions; masking F5 as well moves them as much as masking all six zones.
+            The area under the curve beats 98% of random zone orders ·
+            <a href="assets/figures/faithfulness.html">open on its own</a>.</figcaption>
         </figure>
       </div>
-      <p class="note">Every plot is an interactive Plotly figure that exports to HTML or to static images. See the
+      <p class="note">All three figures above are SMX's own Plotly output, exported to HTML: hover, zoom and toggle
+        the legend entries. See the
         <a href="https://spectral-model-explainer.readthedocs.io/en/latest/plotting.html">plotting guide</a>.</p>
     </section>
 

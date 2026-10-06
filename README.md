@@ -8,16 +8,17 @@ It follows [DPG_web](https://github.com/Meta-Group/DPG_web), the site of the Dec
 |---|---|
 | `static/index.html`, `static/assets/` | Landing page: what SMX is, how it works, the interactive predicate graph, install, quickstart, links to the [docs](https://spectral-model-explainer.readthedocs.io/), citation |
 | `static/sandbox/` | Sandbox: an in-browser SMX notebook (below) |
-| `scripts/export_quickstart_graph.py` | Rebuilds `static/assets/quickstart-graph.json`, the landing page's interactive graph (needs `pip install spectral-model-explainer`) |
+| `scripts/export_quickstart.py` | Rebuilds the landing page's interactive examples from its quickstart snippet: the predicate graph (`static/assets/quickstart-graph.json`) and SMX's zone-ranking, threshold-spectrum and faithfulness figures (`static/assets/figures/*.html`). Needs `pip install "spectral-model-explainer[plotting]"` |
 
 `.github/workflows/pages.yml` publishes `static/` on every push to `main` that touches it
 (Settings → Pages → Source: **GitHub Actions**).
 
 To preview the site locally: `cd static && python3 -m http.server`.
 
-The figures on the landing page come from the SMX repository's plotting gallery (`assets/` there).
-`assets/graph.js` draws the predicate graph with [Cytoscape.js](https://js.cytoscape.org/), vendored in
-`static/assets/vendor/`, so the landing page needs no CDN for it.
+The landing page's figures are SMX's own Plotly output, exported as standalone HTML pages and shown in
+iframes. Each page loads plotly.js from the same cdnjs file as the Sandbox (the browser downloads it once),
+so the landing page itself carries no plotting library. `assets/graph.js` draws the predicate graph with
+[Cytoscape.js](https://js.cytoscape.org/), vendored in `static/assets/vendor/`.
 
 ## Sandbox
 
