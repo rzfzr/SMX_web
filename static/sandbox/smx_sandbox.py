@@ -29,7 +29,7 @@ IN_SANDBOX = _bridge_emit is not None
 MAX_TABLE_ROWS = 500
 
 __all__ = [
-    "display", "graph_data", "show_dataset", "show_faithfulness", "show_graph", "show_metrics",
+    "display", "graph_data", "show_dataset", "show_faithfulness", "show_graph", "show_metrics", "zone_editor",
 ]
 
 
@@ -235,6 +235,31 @@ def show_dataset(X: pd.DataFrame, y: pd.Series, positive=None) -> None:
         "positive": None if positive is None else str(positive),
     })
     display(fig)
+
+
+def zone_editor(spectrum: pd.Series, spectral_cuts, param: str = "manual_zones", mode_param: str = "zones",
+                mode_value: str = "manual") -> None:
+    """Show the spectrum with its zones; in the Sandbox the zones can be drawn and edited on the chart.
+
+    Edits are written back to the form as ``param = "start-end, …"`` and switch ``mode_param`` to
+    ``mode_value``, so the next run uses them. Elsewhere this shows smx.plot_spectrum_with_zones.
+    """
+    if not IN_SANDBOX:
+        from smx import plot_spectrum_with_zones
+        print(f"To change the zones, set zones = {mode_value!r} and edit {param} (start-end, …).")
+        display(plot_spectrum_with_zones(spectrum, spectral_cuts, title="Mean calibration spectrum and its zones",
+                                         height=380))
+        return
+    axis = pd.to_numeric(pd.Index(spectrum.index).astype(str), errors="coerce")
+    _emit({
+        "kind": "zones",
+        "x": [_plain(v) for v in axis],
+        "y": [_plain(v) for v in spectrum.to_numpy(dtype=float)],
+        "cuts": [[str(c[0]), float(c[1]), float(c[2])] for c in spectral_cuts],
+        "param": param,
+        "modeParam": mode_param,
+        "modeValue": mode_value,
+    })
 
 
 def show_metrics(metrics: dict) -> None:

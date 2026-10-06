@@ -444,6 +444,7 @@
     else if (out.kind === "metrics") node = renderMetrics(out);
     else if (out.kind === "faithfulness") node = renderFaithfulness(out);
     else if (out.kind === "plotly") node = renderPlotly(cell, out.fig);
+    else if (out.kind === "zones") node = renderZoneEditor(cell, out);
     else if (out.kind === "image") node = el("div", "out-image", `<img alt="Figure" src="data:image/png;base64,${out.png}">`);
     else if (out.kind === "graph") node = renderGraph(cell, out.data);
     else node = el("pre", "out-text", esc(JSON.stringify(out)));
@@ -522,6 +523,138 @@
       delete layout.width;
       Plotly.newPlot(plot, fig.data || [], layout, { responsive: true, displaylogo: false });
       cell.plots.push(plot);
+    }).catch((err) => { wrap.innerHTML = `<p class="graph-warn">${esc(err.message)}</p>`; });
+    return wrap;
+  }
+
+  // Zones drawn on the mean spectrum (smx_sandbox.zone_editor): drag across the chart to add a zone, drag a
+  // zone or its edges to move it. Edits go to the form as "start-end, …" and switch the zone mode to manual.
+  function renderZoneEditor(cell, z) {
+    const xs = z.x.filter((v) => v != null), xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const step = (xMax - xMin) / Math.max(1, xs.length - 1);
+    const decimals = Math.max(0, Math.ceil(-Math.log10(step)) + 1); // a tenth of the axis step
+    const snap = (v) => +Math.min(xMax, Math.max(xMin, v)).toFixed(decimals);
+    const fmt = (v) => String(+v.toFixed(decimals));
+    let zones = z.cuts.map(([name, a, b]) => ({ name, a: Math.min(a, b), b: Math.max(a, b) }));
+    const undo = [];
+
+    const wrap = el("div", "zone-editor");
+    wrap.innerHTML = `
+      <div class="ze-bar">
+        <span class="ze-hint">Drag across the spectrum to add a zone · drag a zone or its edges to move it</span>
+        <span class="ze-actions"><button type="button" class="btn btn-sm" data-ze="undo" disabled>Undo</button>
+          <button type="button" class="btn btn-sm" data-ze="clear">Clear</button></span>
+      </div>
+      <div class="out-plotly"><div class="plotly-host"></div></div>
+      <div class="ze-zones" aria-label="Zones"></div>
+      <div class="ze-changed" hidden>Zones changed and set to manual. <button type="button" class="btn btn-sm btn-primary">▶ Run all</button></div>`;
+    const plot = $(".plotly-host", wrap), list = $(".ze-zones", wrap), undoBtn = $('[data-ze="undo"]', wrap);
+    $(".ze-changed .btn", wrap).onclick = () => runAll();
+
+    const fill = (zn, i) => (/^background/i.test(zn.name) ? css("--g-bg-fill") : colour(i));
+    const shapes = () => zones.map((zn, i) => ({
+      type: "rect", xref: "x", yref: "paper", x0: zn.a, x1: zn.b, y0: 0, y1: 1, layer: "below",
+      fillcolor: fill(zn, i), opacity: 0.28, line: { width: 1, color: "rgba(16,20,43,.45)" },
+    }));
+    const labels = () => zones.map((zn) => ({
+      x: (zn.a + zn.b) / 2, y: 1, xref: "x", yref: "paper", yanchor: "bottom", showarrow: false,
+      text: zn.name, font: { size: 11, color: "#2b2b2b" },
+    }));
+    function drawList() {
+      list.innerHTML = zones.length
+        ? zones.map((zn, i) => `<span class="ze-chip"><span class="sw" style="background:${fill(zn, i)}"></span>${esc(zn.name)} <span class="muted">${esc(fmt(zn.a))}–${esc(fmt(zn.b))}</span><button type="button" data-i="${i}" aria-label="Remove ${esc(zn.name)}">×</button></span>`).join("")
+        : `<span class="muted">No zones yet: drag across the spectrum to add one.</span>`;
+      list.querySelectorAll("button[data-i]").forEach((b) => (b.onclick = () => change(() => zones.splice(+b.dataset.i, 1))));
+    }
+
+    // a new or moved zone wins: the zones it overlaps are trimmed, split or dropped
+    function place(zn) {
+      const out = [];
+      for (const o of zones) {
+        if (o === zn) continue;
+        if (o.b <= zn.a || o.a >= zn.b) out.push(o);
+        else {
+          if (o.a < zn.a) out.push({ ...o, b: zn.a });
+          if (o.b > zn.b) out.push({ ...o, a: zn.b });
+        }
+      }
+      out.push(zn);
+      zones = out.filter((o) => o.b - o.a >= 2 * step).sort((p, q) => p.a - q.a);
+    }
+
+    let syncing = false;
+    function redraw() {
+      syncing = true;
+      return window.Plotly.relayout(plot, { shapes: shapes(), annotations: labels() }).finally(() => { syncing = false; });
+    }
+    function change(edit) {
+      undo.push(zones.map((o) => ({ ...o })));
+      edit();
+      zones.forEach((o, i) => (o.name = `Z${i + 1}`)); // named by position, as the notebook names manual zones
+      undoBtn.disabled = false;
+      commit();
+    }
+    function commit() {
+      redraw();
+      drawList();
+      const form = cells.find((c) => c.form && params(c).some((p) => p.name === z.param));
+      if (!form) return;
+      setParam(form, z.param, pyLiteral(zones.map((o) => `${fmt(o.a)}-${fmt(o.b)}`).join(", ")));
+      setParam(form, z.modeParam, pyLiteral(z.modeValue));
+      buildForm(form);
+      $(".ze-changed", wrap).hidden = false;
+    }
+    undoBtn.onclick = () => {
+      if (!undo.length) return;
+      zones = undo.pop();
+      undoBtn.disabled = !undo.length;
+      commit();
+    };
+    $('[data-ze="clear"]', wrap).onclick = () => zones.length && change(() => (zones = []));
+
+    wrap._mount = () => loadPlotly().then((Plotly) => {
+      const trace = {
+        x: z.x, y: z.y, type: "scatter", mode: "lines", name: "Mean calibration spectrum",
+        line: { color: "#2b2b2b", width: 2 }, hovertemplate: "%{x:.4g}<extra></extra>",
+        unselected: { marker: { opacity: 1 } },
+      };
+      const layout = {
+        template: "plotly_white", height: 380, autosize: true, margin: { l: 56, r: 16, t: 40, b: 46 },
+        dragmode: "select", selectdirection: "h", hovermode: "x", showlegend: false,
+        xaxis: { title: { text: "Spectral axis" } }, yaxis: { title: { text: "Intensity" }, fixedrange: true },
+        shapes: shapes(), annotations: labels(),
+      };
+      Plotly.newPlot(plot, [trace], layout, {
+        responsive: true, displaylogo: false, edits: { shapePosition: true },
+        modeBarButtonsToRemove: ["lasso2d", "autoScale2d"],
+      });
+      cell.plots.push(plot);
+      drawList();
+      // drag-select a range: a new zone
+      plot.on("plotly_selected", (ev) => {
+        const r = ev && ev.range && ev.range.x;
+        syncing = true;
+        Plotly.relayout(plot, { selections: [] }).finally(() => { syncing = false; });
+        Plotly.restyle(plot, { selectedpoints: [null] });
+        if (!r) return;
+        const a = snap(Math.min(...r)), b = snap(Math.max(...r));
+        if (b - a < 2 * step) return;
+        change(() => place({ name: "", a, b }));
+      });
+      // a zone dragged or resized on the chart (Plotly reports shapes[i].x0/x1)
+      plot.on("plotly_relayout", (ev) => {
+        if (syncing) return;
+        const moved = new Set(Object.keys(ev).map((k) => /^shapes\[(\d+)\]\.x[01]$/.exec(k)).filter(Boolean).map((m) => +m[1]));
+        if (!moved.size) return;
+        const i = [...moved][0], sh = plot.layout.shapes[i];
+        const a = snap(Math.min(sh.x0, sh.x1)), b = snap(Math.max(sh.x0, sh.x1));
+        change(() => {
+          const zn = zones[i];
+          if (b - a < 2 * step) { zones.splice(i, 1); return; }
+          Object.assign(zn, { a, b });
+          place(zn);
+        });
+      });
     }).catch((err) => { wrap.innerHTML = `<p class="graph-warn">${esc(err.message)}</p>`; });
     return wrap;
   }

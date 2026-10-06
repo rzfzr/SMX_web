@@ -114,7 +114,7 @@
 /* outputs */
 .cell-output:empty { display: none; }
 .cell-output { display: flex; flex-direction: column; gap: 12px; padding: 12px 0 2px; min-width: 0; }
-.cell.stale .cell-output { opacity: .5; }
+.cell.stale .cell-output > :not(.zone-editor) { opacity: .5; } /* the zone editor stays live while you edit */
 .out-log { border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface); font-size: .82rem; }
 .out-log > summary { cursor: pointer; padding: 5px 10px; color: var(--muted); font-weight: 600; }
 .out-log pre, .out-text {
@@ -188,6 +188,21 @@
 /* SMX's Plotly figures are drawn for white paper: keep them on white in both themes */
 .out-plotly { border: 1.5px solid var(--line); border-radius: 8px; background: #fff; overflow: hidden; min-height: 120px; }
 .plotly-host { width: 100%; }
+
+/* zone editor (smx_sandbox.zone_editor) */
+.zone-editor { display: flex; flex-direction: column; gap: 8px; }
+.ze-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.ze-hint { font-size: .85rem; color: var(--muted); }
+.ze-actions { display: flex; gap: 8px; }
+.ze-actions .btn[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
+.zone-editor .out-plotly .plotly-host { cursor: crosshair; }
+.ze-zones { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; }
+.ze-zones .muted { color: var(--muted); }
+.ze-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--surface); font-variant-numeric: tabular-nums; }
+.ze-chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 4px; border-radius: 4px; }
+.ze-chip button:hover { color: var(--rose); background: var(--code-bg); }
+.ze-changed { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--sky) 30%, var(--surface)); font-size: .88rem; font-weight: 600; }
+.ze-changed[hidden] { display: none; }
 
 .add-cell { display: flex; justify-content: center; padding: 4px 0 0 82px; }
 .add-cell .btn { box-shadow: 3px 3px 0 var(--line); }

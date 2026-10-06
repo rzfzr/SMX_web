@@ -30,13 +30,17 @@ scikit-learn compiled to WebAssembly), so it works on GitHub Pages with no serve
 | `quickstart_synthetic.ipynb` | The notebook shown on the page (a real `.ipynb`), following SMX's `examples/quickstart.py`. Lines ending in `# @param {...}` become form fields and `# @markdown` lines head form sections, in the style of Google Colab. |
 | `notebook.js` | Renders the cells (CodeMirror editors, Shift+Enter to run), the parameter form, CSV loading, rich outputs and `.ipynb` download. |
 | `worker.js` | Python kernel: Pyodide in a module web worker. It installs the latest `spectral-model-explainer` and `plotly` from PyPI with micropip on start. |
-| `smx_sandbox.py` | Display helpers (`show_dataset`, `show_metrics`, `show_graph`, `show_faithfulness`, `display`) and `graph_data()`. In the Sandbox they send JSON to the page; in Jupyter they fall back to IPython display, so a downloaded notebook runs there too. |
+| `smx_sandbox.py` | Display helpers (`show_dataset`, `show_metrics`, `zone_editor`, `show_graph`, `show_faithfulness`, `display`) and `graph_data()`. In the Sandbox they send JSON to the page; in Jupyter they fall back to IPython display, so a downloaded notebook runs there too. |
 
 The notebook generates two classes of synthetic spectra with `generate_synthetic_spectral_data`; the form
 sets their peaks, heights, width, noise and size. A CSV loaded from disk (one row per spectrum, spectral
 columns named by their position, plus a class column) replaces them and stays in the browser. With more than
 two classes SMX explains one class against the rest. The rest of the form picks the classifier, how the
-spectral zones are made (detected peaks, equal width, or typed in) and the SMX settings.
+spectral zones are made (detected peaks, equal width, or manual) and the SMX settings.
+
+Manual zones can be drawn on the mean spectrum in the zones cell (`zone_editor`): drag across the chart to add a
+zone, drag a zone or its edges to move it, remove zones with ×. Each edit writes the ranges into the form's
+`manual_zones` and switches `zones` to manual; the next run uses them.
 
 SMX's Plotly figures are drawn with plotly.js (the cartesian bundle from cdnjs), loaded when the first figure
 appears. The first visit downloads about 60 MB (Pyodide, NumPy, pandas, SciPy, scikit-learn, matplotlib,
