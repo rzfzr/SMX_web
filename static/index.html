@@ -25,6 +25,7 @@
       <nav class="nav-links" aria-label="Main">
         <a href="#install" class="hide-sm">Install</a>
         <a href="#how" class="hide-sm">How it works</a>
+        <a href="#graph" class="hide-sm">Graph</a>
         <a href="#cite" class="hide-sm">Cite</a>
         <a href="https://spectral-model-explainer.readthedocs.io/">Docs</a>
         <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch to dark theme" aria-pressed="false">
@@ -103,6 +104,21 @@
         Ordering the predicates by that impact yields a path, and the paths of all bags and repetitions merge into one
         weighted, directed graph. Its Local Reaching Centrality ranks the predicates, and since PCA is invertible, each
         threshold maps back to a spectrum you can overlay on your own measurements.</p>
+    </section>
+
+    <section class="wrap section" id="graph">
+      <h2>The predicate graph</h2>
+      <figure class="card fig">
+        <div class="smx-graph" data-smx-src="assets/quickstart-graph.json" data-smx-label="Interactive SMX predicate graph of an SVM on synthetic spectra, with six zones">
+          <p class="graph-fallback">The interactive graph needs JavaScript. Its data is in
+            <a href="assets/quickstart-graph.json">quickstart-graph.json</a>.</p>
+        </div>
+        <figcaption>The graph built in the first bagging repetition of the <a href="#install">quickstart below</a>: an
+          SVM on synthetic spectra, explained with six zones. Each node is a predicate on a zone's PC1 score, such as
+          <code>F1 &gt; 1.79</code>; an edge means the source ranked just above the target in a bag, and its weight sums
+          the source's perturbation impact over the bags. Colour by LRC to see F1 and F5, the two zones where the
+          classes differ, lead the ranking.</figcaption>
+      </figure>
     </section>
 
     <section class="wrap section" id="outputs">
@@ -261,5 +277,7 @@ smx.plot_zone_ranking_over_spectrum(<span class="s">"zone_ranking.html"</span>)<
   </footer>
 
   <script src="assets/landing.js"></script>
+  <script src="assets/vendor/cytoscape.min.js" defer></script>
+  <script src="assets/graph.js" defer></script>
 </body>
 </html>
